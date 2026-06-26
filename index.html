@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>新增記錄</title>
+  <style>
+    :root{
+      --bg:#0c0d10;
+      --card:#181b21;
+      --card2:#20242b;
+      --line:rgba(255,255,255,.12);
+      --green:#62d96b;
+      --green2:#42b956;
+      --text:#f5f7fb;
+      --muted:#9aa3ad;
+      --danger:#ff6f6f;
+      --radius:20px;
+      --shadow:0 16px 42px rgba(0,0,0,.36);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{
+      margin:0;
+      min-height:100svh;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+      background:
+        radial-gradient(circle at 20% 0%,rgba(98,217,107,.18),transparent 36%),
+        radial-gradient(circle at 90% 100%,rgba(98,217,107,.12),transparent 34%),
+        var(--bg);
+      color:var(--text);
+    }
+    .app{
+      width:min(480px,100%);
+      margin:0 auto;
+      min-height:100svh;
+      padding:12px 14px 28px;
+    }
+    .top{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:linear-gradient(180deg,rgba(12,13,16,.96),rgba(12,13,16,.80));
+      backdrop-filter:blur(12px);
+      padding:12px 0 10px;
+    }
+    .titlebar{
+      display:grid;
+      grid-template-columns:42px 1fr 42px;
+      align-items:center;
+    }
+    .iconbtn{
+      width:42px;height:42px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      background:rgba(255,255,255,.04);
+      color:var(--green);
+      font-size:24px;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+    }
+    h1{
+      margin:0;
+      font-size:24px;
+      text-align:center;
+      letter-spacing:1px;
+    }
+    .card{
+      background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:15px;
+      margin:12px 0;
+      box-shadow:var(--shadow);
+    }
+    .section-title{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      color:var(--green);
+      font-weight:900;
+      font-size:20px;
+      margin-bottom:6px;
+    }
+    .hint{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.55;
+      margin:0 0 12px;
+    }
+    .settings{
+      display:none;
+    }
+    .settings.show{
+      display:block;
+    }
+    label{
+      display:block;
+      color:var(--muted);
+      font-size:14px;
+      font-weight:700;
+      margin:10px 0 6px;
+    }
+    textarea,.input{
+      width:100%;
+      border:1px solid rgba(98,217,107,.55);
+      border-radius:16px;
+      background:rgba(8,10,13,.68);
+      color:var(--text);
+      outline:none;
+      font-family:inherit;
+      font-size:17px;
+      padding:13px 14px;
+    }
+    textarea{
+      min-height:84px;
+      resize:vertical;
+      line-height:1.45;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .row > *{flex:1}
+    .chips{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .chip{
+      padding:8px 11px;
+      border-radius:999px;
+      background:rgba(255,255,255,.07);
+      color:#d8dde5;
+      font-size:13px;
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .chip strong{color:var(--green)}
+    .field{
+      display:grid;
+      grid-template-columns:42px 1fr auto;
+      gap:10px;
+      align-items:center;
+      background:linear-gradient(180deg,rgba(255,255,255,.062),rgba(255,255,255,.028));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:12px;
+      min-height:76px;
+      margin-bottom:10px;
+    }
+    .field-icon{
+      width:42px;height:42px;
+      border-radius:14px;
+      background:rgba(98,217,107,.10);
+      color:var(--green);
+      display:grid;
+      place-items:center;
+      font-size:22px;
+      border:1px solid rgba(98,217,107,.16);
+    }
+    .field .label{
+      margin:0 0 4px;
+      font-size:14px;
+      color:var(--muted);
+      font-weight:800;
+    }
+    .field input{
+      width:100%;
+      border:0;
+      outline:0;
+      padding:0;
+      background:transparent;
+      color:var(--text);
+      font-size:23px;
+      font-weight:750;
+      font-family:inherit;
+    }
+    .field input::placeholder{color:rgba(255,255,255,.25)}
+    .suffix{
+      min-width:32px;
+      text-align:right;
+      color:var(--muted);
+      font-weight:800;
+      font-size:16px;
+    }
+    .btn{
+      border:0;
+      border-radius:16px;
+      padding:14px 16px;
+      background:linear-gradient(180deg,var(--green),var(--green2));
+      color:#fff;
+      font-family:inherit;
+      font-weight:900;
+      font-size:17px;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(98,217,107,.22);
+    }
+    .btn.dark{
+      background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.07));
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--text);
+      box-shadow:none;
+    }
+    .btn.danger{
+      background:rgba(255,111,111,.15);
+      border:1px solid rgba(255,111,111,.28);
+      color:#ffb4b4;
+      box-shadow:none;
+    }
+    .actions{
+      position:sticky;
+      bottom:0;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      padding:12px 0 max(12px,env(safe-area-inset-bottom));
+      background:linear-gradient(0deg,rgba(12,13,16,1),rgba(12,13,16,.78),transparent);
+    }
+    .actions .btn{
+      min-height:62px;
+      border-radius:20px;
+      font-size:20px;
+    }
+    .status{
+      margin-top:10px;
+      padding:11px 13px;
+      border-radius:16px;
+      background:rgba(255,255,255,.055);
+      color:var(--muted);
+      line-height:1.45;
+      font-size:14px;
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .status.ok{color:#dfffe1;border-color:rgba(98,217,107,.22)}
+    .status.err{color:#ffd6d6;border-color:rgba(255,111,111,.25)}
+    .records-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .records-title h2{
+      margin:0;
+      color:#d9dee7;
+      font-size:17px;
+    }
+    .record{
+      border:1px solid rgba(255,255,255,.09);
+      background:rgba(255,255,255,.045);
+      border-radius:16px;
+      padding:11px 12px;
+      margin:8px 0;
+      color:#d6dbe3;
+      line-height:1.55;
+      font-size:14px;
+    }
+    .record strong{
+      display:block;
+      font-size:16px;
+      color:#fff;
+      margin-bottom:3px;
+    }
+    .empty{
+      color:var(--muted);
+      text-align:center;
+      padding:16px 0 8px;
+      font-size:14px;
+    }
+    .mini{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    @media (min-width:520px){
+      body{display:flex;align-items:flex-start;justify-content:center}
+      .app{padding-top:22px}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="top">
+      <div class="titlebar">
+        <button class="iconbtn" id="backBtn" title="返回">‹</button>
+        <h1>新增記錄</h1>
+        <button class="iconbtn" id="settingBtn" title="設定">⚙</button>
+      </div>
+    </div>
+
+    <section class="card settings" id="settingsCard">
+      <div class="section-title">⚙ API 設定</div>
+      <p class="hint">第一次使用請貼上 Google Apps Script 部署後的 Web App URL，會保存在此手機瀏覽器。</p>
+      <label for="apiUrlInput">Apps Script Web App URL</label>
+      <input class="input" id="apiUrlInput" placeholder="https://script.google.com/macros/s/......../exec">
+      <label for="apiTokenInput">API Token，可留空</label>
+      <input class="input" id="apiTokenInput" placeholder="和 Code.gs 的 API_TOKEN 相同">
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="saveApiBtn">儲存設定</button>
+        <button class="btn dark" id="pingBtn">測試連線</button>
+      </div>
+      <p class="mini">提醒：GitHub Pages 是前端，Google Apps Script 才是寫入試算表的後端。</p>
+    </section>
+
+    <section class="card">
+      <div class="section-title">☘ 自動判斷區 ✦</div>
+      <p class="hint">貼上訊息內容，系統會自動擷取地址、日期、公里、金額與備註，再填入下方欄位。</p>
+      <textarea id="rawText" placeholder="例：水林馬千歲》嘉義樂億飯店 700元 23公里 半夜">水林馬千歲》嘉義樂億飯店 700元 23公里 半夜</textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn dark" id="clearBtn">清空</button>
+        <button class="btn" id="parseBtn">✦ 解析填入</button>
+      </div>
+      <div class="chips" id="chips"></div>
+    </section>
+
+    <section>
+      <div class="field">
+        <div class="field-icon">⌖</div>
+        <div>
+          <div class="label">地址</div>
+          <input id="address" placeholder="輸入地址 / 店名">
+        </div>
+        <div class="suffix"></div>
+      </div>
+
+      <div class="field">
+        <div class="field-icon">▣</div>
+        <div>
+          <div class="label">日期</div>
+          <input id="date" inputmode="numeric" placeholder="YYYY/MM/DD">
+        </div>
+        <div class="suffix">📅</div>
+      </div>
+
+      <div class="field">
+        <div class="field-icon">⌁</div>
+        <div>
+          <div class="label">公里</div>
+          <input id="km" inputmode="decimal" placeholder="0">
+        </div>
+        <div class="suffix">公里</div>
+      </div>
+
+      <div class="field">
+        <div class="field-icon">$</div>
+        <div>
+          <div class="label">金額</div>
+          <input id="amount" inputmode="numeric" placeholder="0">
+        </div>
+        <div class="suffix">元</div>
+      </div>
+
+      <div class="field">
+        <div class="field-icon">☾</div>
+        <div>
+          <div class="label">備註 / 時段</div>
+          <input id="note" placeholder="例如：半夜">
+        </div>
+        <div class="suffix"></div>
+      </div>
+    </section>
+
+    <div class="status" id="statusBox">尚未連線。請先到右上角 ⚙ 設定 Apps Script URL。</div>
+
+    <div class="actions">
+      <button class="btn dark" id="loadBtn">最近紀錄</button>
+      <button class="btn" id="submitBtn">✓ 寫入試算表</button>
+    </div>
+
+    <section class="card" id="recordsCard">
+      <div class="records-title">
+        <h2>最近紀錄</h2>
+        <button class="btn dark" id="refreshBtn" style="padding:9px 12px;font-size:14px">刷新</button>
+      </div>
+      <div id="recordList" class="empty">尚未載入</div>
+    </section>
+  </main>
+
+  <script>
+    // 可選：如果你想直接寫死 API，也可以貼在這裡。
+    const DEFAULT_API_URL = "";
+    const DEFAULT_API_TOKEN = "";
+
+    const $ = id => document.getElementById(id);
+
+    function setStatus(msg, type=""){
+      const el = $("statusBox");
+      el.className = "status" + (type ? " " + type : "");
+      el.textContent = msg;
+    }
+
+    function todayString(){
+      const d = new Date();
+      return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;
+    }
+
+    function normalizeText(text){
+      return (text || "").replace(/[，,]/g," ").replace(/\s+/g," ").trim();
+    }
+
+    function parseInfo(text){
+      const raw = normalizeText(text);
+      const result = { address:"", date:todayString(), km:"", amount:"", note:"" };
+
+      const dateMatch = raw.match(/(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}|\d{1,2}[\/\-\.]\d{1,2})/);
+      if(dateMatch){
+        let date = dateMatch[1].replace(/[-.]/g,"/");
+        if(/^\d{1,2}\/\d{1,2}$/.test(date)) date = `${new Date().getFullYear()}/${date}`;
+        result.date = date.split("/").map((v,i)=> i===0 ? v : String(v).padStart(2,"0")).join("/");
+      }
+
+      const amountMatch = raw.match(/(\d+(?:\.\d+)?)\s*(元|塊|NTD?|台幣)/i);
+      if(amountMatch) result.amount = amountMatch[1];
+
+      const kmMatch = raw.match(/(\d+(?:\.\d+)?)\s*(公里|公理|km)/i);
+      if(kmMatch) result.km = kmMatch[1];
+
+      const noteWords = ["半夜","凌晨","早上","上午","中午","下午","傍晚","晚上","夜間","假日","雨天"];
+      result.note = noteWords.filter(w => raw.includes(w)).join("、");
+
+      let addressSource = raw;
+      if(addressSource.includes("》")) addressSource = addressSource.split("》").slice(1).join("》");
+      if(addressSource.includes(">")) addressSource = addressSource.split(">").slice(1).join(">");
+
+      addressSource = addressSource
+        .replace(/(\d+(?:\.\d+)?)\s*(元|塊|NTD?|台幣)/ig,"")
+        .replace(/(\d+(?:\.\d+)?)\s*(公里|公理|km)/ig,"")
+        .replace(/(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}|\d{1,2}[\/\-\.]\d{1,2})/g,"")
+        .replace(/[→➡➜]/g," ");
+
+      noteWords.forEach(w => addressSource = addressSource.replaceAll(w,""));
+      result.address = normalizeText(addressSource);
+
+      return result;
+    }
+
+    function renderChips(data){
+      const chips = [];
+      if(data.address) chips.push(`地址：<strong>${escapeHtml(data.address)}</strong>`);
+      if(data.amount) chips.push(`金額：<strong>${escapeHtml(data.amount)}元</strong>`);
+      if(data.km) chips.push(`公里：<strong>${escapeHtml(data.km)}</strong>`);
+      if(data.note) chips.push(`備註：<strong>${escapeHtml(data.note)}</strong>`);
+      $("chips").innerHTML = chips.length ? chips.map(x => `<span class="chip">${x}</span>`).join("") : `<span class="chip">尚未偵測</span>`;
+    }
+
+    function fillFields(data){
+      $("address").value = data.address || "";
+      $("date").value = data.date || todayString();
+      $("km").value = data.km || "";
+      $("amount").value = data.amount || "";
+      $("note").value = data.note || "";
+      renderChips(data);
+    }
+
+    function getApiUrl(){
+      return localStorage.getItem("API_URL") || DEFAULT_API_URL || "";
+    }
+
+    function getApiToken(){
+      return localStorage.getItem("API_TOKEN") || DEFAULT_API_TOKEN || "";
+    }
+
+    function loadApiSettings(){
+      $("apiUrlInput").value = getApiUrl();
+      $("apiTokenInput").value = getApiToken();
+      if(!getApiUrl()) $("settingsCard").classList.add("show");
+    }
+
+    function saveApiSettings(){
+      localStorage.setItem("API_URL", $("apiUrlInput").value.trim());
+      localStorage.setItem("API_TOKEN", $("apiTokenInput").value.trim());
+      setStatus("API 設定已儲存。", "ok");
+      $("settingsCard").classList.remove("show");
+    }
+
+    function apiCall(params){
+      const apiUrl = getApiUrl();
+      if(!apiUrl){
+        $("settingsCard").classList.add("show");
+        return Promise.reject(new Error("尚未設定 Apps Script URL"));
+      }
+
+      params.token = getApiToken();
+      params._t = Date.now();
+
+      return new Promise((resolve, reject) => {
+        const callbackName = "jsonp_cb_" + Date.now() + "_" + Math.floor(Math.random()*100000);
+        params.callback = callbackName;
+
+        const url = apiUrl + (apiUrl.includes("?") ? "&" : "?") + new URLSearchParams(params).toString();
+
+        const script = document.createElement("script");
+        const timer = setTimeout(() => {
+          cleanup();
+          reject(new Error("連線逾時，請檢查 Apps Script 部署網址與權限"));
+        }, 15000);
+
+        function cleanup(){
+          clearTimeout(timer);
+          delete window[callbackName];
+          script.remove();
+        }
+
+        window[callbackName] = (data) => {
+          cleanup();
+          if(data && data.ok) resolve(data);
+          else reject(new Error((data && data.message) || "API 回傳失敗"));
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error("連線失敗，請確認 URL 是否為 /exec 結尾"));
+        };
+
+        script.src = url;
+        document.body.appendChild(script);
+      });
+    }
+
+    function getFormData(){
+      return {
+        rawText: $("rawText").value.trim(),
+        address: $("address").value.trim(),
+        date: $("date").value.trim(),
+        km: $("km").value.trim(),
+        amount: $("amount").value.trim(),
+        note: $("note").value.trim()
+      };
+    }
+
+    function validate(data){
+      const missing = [];
+      if(!data.address) missing.push("地址");
+      if(!data.date) missing.push("日期");
+      if(!data.km) missing.push("公里");
+      if(!data.amount) missing.push("金額");
+      return missing;
+    }
+
+    async function submitRecord(){
+      const data = getFormData();
+      const missing = validate(data);
+      if(missing.length){
+        setStatus("請補上：" + missing.join("、"), "err");
+        return;
+      }
+
+      setStatus("寫入中...");
+      try{
+        const res = await apiCall({action:"add", ...data});
+        setStatus("已寫入 Google 試算表：第 " + res.row + " 列", "ok");
+        await loadRecords();
+      }catch(err){
+        setStatus(err.message, "err");
+      }
+    }
+
+    async function ping(){
+      setStatus("測試連線中...");
+      try{
+        const res = await apiCall({action:"ping"});
+        setStatus("連線成功：" + (res.sheetName || "Google Sheet"), "ok");
+      }catch(err){
+        setStatus(err.message, "err");
+      }
+    }
+
+    async function loadRecords(){
+      setStatus("讀取最近紀錄...");
+      try{
+        const res = await apiCall({action:"list", limit:"20"});
+        renderRecords(res.records || []);
+        setStatus("最近紀錄已更新。", "ok");
+      }catch(err){
+        setStatus(err.message, "err");
+      }
+    }
+
+    function renderRecords(records){
+      const box = $("recordList");
+      if(!records.length){
+        box.className = "empty";
+        box.textContent = "目前沒有資料";
+        return;
+      }
+      box.className = "";
+      box.innerHTML = records.map(r => `
+        <div class="record">
+          <strong>${escapeHtml(r.address || "")}</strong>
+          ${escapeHtml(r.date || "")}｜${escapeHtml(r.amount || "")}元｜${escapeHtml(r.km || "")}公里${r.note ? "｜" + escapeHtml(r.note) : ""}<br>
+          <span class="mini">寫入時間：${escapeHtml(r.createdAt || "")}</span>
+        </div>
+      `).join("");
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    $("settingBtn").addEventListener("click", () => {
+      $("settingsCard").classList.toggle("show");
+    });
+
+    $("saveApiBtn").addEventListener("click", saveApiSettings);
+    $("pingBtn").addEventListener("click", ping);
+    $("parseBtn").addEventListener("click", () => fillFields(parseInfo($("rawText").value)));
+    $("clearBtn").addEventListener("click", () => {
+      $("rawText").value = "";
+      fillFields({address:"", date:todayString(), km:"", amount:"", note:""});
+      $("rawText").focus();
+    });
+    $("submitBtn").addEventListener("click", submitRecord);
+    $("loadBtn").addEventListener("click", loadRecords);
+    $("refreshBtn").addEventListener("click", loadRecords);
+    $("rawText").addEventListener("input", () => renderChips(parseInfo($("rawText").value)));
+
+    loadApiSettings();
+    fillFields(parseInfo($("rawText").value));
+  </script>
+</body>
+</html>
