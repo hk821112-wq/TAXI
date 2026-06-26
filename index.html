@@ -452,6 +452,15 @@
       const raw = normalizeText(text);
       const result = { address:"", date:todayString(), km:"", amount:"", tip:"0", totalAmount:"0", note:"" };
 
+      // 語音輸入修正：
+      // iPhone 常把「300元20公里」辨識成「$300.20公里」
+      // 這裡直接把「$300.20公里」拆成：金額 300、公里 20
+      const voiceMoneyKmMatch = raw.match(/(?:NTD?|NT|台幣)?\s*[\$＄]\s*(\d+)\.(\d+(?:\.\d+)?)\s*(公里|公理|km)/i);
+      if (voiceMoneyKmMatch) {
+        result.amount = voiceMoneyKmMatch[1];
+        result.km = voiceMoneyKmMatch[2];
+      }
+
       const dateMatch = raw.match(/(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}|\d{1,2}[\/\-\.]\d{1,2})/);
       if(dateMatch){
         let date = dateMatch[1].replace(/[-.]/g,"/");
@@ -471,11 +480,14 @@
         .replace(/\d+(?:\.\d+)?\s*(?:元|塊)?\s*(?:小費|tip|tips)/ig,"")
         .replace(/\+\s*\d+(?:\.\d+)?\s*(?:元|塊)?/ig,"");
 
-      const amountMatch = rawWithoutTip.match(/(\d+(?:\.\d+)?)\s*(元|塊|NTD?|台幣)/i);
-      if(amountMatch) result.amount = amountMatch[1];
+      const amountMatch =
+        rawWithoutTip.match(/(?:NTD?|NT|台幣)?\s*[\$＄]\s*(\d+(?:\.\d+)?)/i) ||
+        rawWithoutTip.match(/(\d+(?:\.\d+)?)\s*(元|塊|NTD?|台幣)/i);
+
+      if(amountMatch && !result.amount) result.amount = amountMatch[1];
 
       const kmMatch = raw.match(/(^|[^\$＄\d.])(\d+(?:\.\d+)?)\s*(公里|公理|km)/i);
-      if(kmMatch) result.km = kmMatch[2];
+      if(kmMatch && !result.km) result.km = kmMatch[2];
 
       const noteWords = ["半夜","凌晨","早上","上午","中午","下午","傍晚","晚上","夜間","假日","雨天"];
       result.note = noteWords.filter(w => raw.includes(w)).join("、");
@@ -485,6 +497,7 @@
       if(addressSource.includes(">")) addressSource = addressSource.split(">").slice(1).join(">");
 
       addressSource = addressSource
+        .replace(/(?:NTD?|NT|台幣)?\s*[\$＄]\s*\d+\.\d+(?:\.\d+)?\s*(公里|公理|km)/ig,"")
         .replace(/(?:NTD?|台幣)?\s*[\$＄]\s*\d+(?:\.\d+)?/ig,"")
         .replace(/\d+(?:\.\d+)?\s*(元|塊|NTD?|台幣)/ig,"")
         .replace(/(\d+(?:\.\d+)?)\s*(公里|公理|km)/ig,"")
