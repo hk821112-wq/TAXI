@@ -307,7 +307,7 @@
     <section class="card">
       <div class="section-title">☘ 自動判斷區 ✦</div>
       <p class="hint">貼上訊息內容，系統會自動擷取地址、日期、公里、金額與備註，再填入下方欄位。</p>
-      <textarea id="rawText" placeholder="例：斗南車站 1000元 50公里 半夜"></textarea>
+      <textarea id="rawText" placeholder="例：斗南車站 1000元 50公里 小費100 半夜"></textarea>
       <div class="row" style="margin-top:10px">
         <button class="btn dark" id="clearBtn">清空</button>
         <button class="btn" id="parseBtn">✦ 解析填入</button>
@@ -348,6 +348,24 @@
         <div>
           <div class="label">金額</div>
           <input id="amount" inputmode="numeric" placeholder="0">
+        </div>
+        <div class="suffix">元</div>
+      </div>
+
+      <div class="field">
+        <div class="field-icon">＋</div>
+        <div>
+          <div class="label">小費</div>
+          <input id="tip" inputmode="numeric" placeholder="0">
+        </div>
+        <div class="suffix">元</div>
+      </div>
+
+      <div class="field">
+        <div class="field-icon">Σ</div>
+        <div>
+          <div class="label">總金額</div>
+          <input id="totalAmount" inputmode="numeric" placeholder="0" readonly>
         </div>
         <div class="suffix">元</div>
       </div>
@@ -402,7 +420,7 @@
 
     function parseInfo(text){
       const raw = normalizeText(text);
-      const result = { address:"", date:todayString(), km:"", amount:"", note:"" };
+      const result = { address:"", date:todayString(), km:"", amount:"", tip:"0", totalAmount:"0", note:"" };
 
       const dateMatch = raw.match(/(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}|\d{1,2}[\/\-\.]\d{1,2})/);
       if(dateMatch){
@@ -411,7 +429,19 @@
         result.date = date.split("/").map((v,i)=> i===0 ? v : String(v).padStart(2,"0")).join("/");
       }
 
-      const amountMatch = raw.match(/(\d+(?:\.\d+)?)\s*(元|塊|NTD?|台幣)/i);
+      const tipMatch =
+        raw.match(/(?:小費|tip|tips|多給|加給|另給)\s*\$?\s*(\d+(?:\.\d+)?)\s*(?:元|塊)?/i) ||
+        raw.match(/(\d+(?:\.\d+)?)\s*(?:元|塊)?\s*(?:小費|tip|tips)/i) ||
+        raw.match(/\+\s*(\d+(?:\.\d+)?)\s*(?:元|塊)?/i);
+
+      if(tipMatch) result.tip = tipMatch[1];
+
+      let rawWithoutTip = raw
+        .replace(/(?:小費|tip|tips|多給|加給|另給)\s*\$?\s*\d+(?:\.\d+)?\s*(?:元|塊)?/ig,"")
+        .replace(/\d+(?:\.\d+)?\s*(?:元|塊)?\s*(?:小費|tip|tips)/ig,"")
+        .replace(/\+\s*\d+(?:\.\d+)?\s*(?:元|塊)?/ig,"");
+
+      const amountMatch = rawWithoutTip.match(/(\d+(?:\.\d+)?)\s*(元|塊|NTD?|台幣)/i);
       if(amountMatch) result.amount = amountMatch[1];
 
       const kmMatch = raw.match(/(\d+(?:\.\d+)?)\s*(公里|公理|km)/i);
@@ -420,7 +450,7 @@
       const noteWords = ["半夜","凌晨","早上","上午","中午","下午","傍晚","晚上","夜間","假日","雨天"];
       result.note = noteWords.filter(w => raw.includes(w)).join("、");
 
-      let addressSource = raw;
+      let addressSource = rawWithoutTip;
       if(addressSource.includes("》")) addressSource = addressSource.split("》").slice(1).join("》");
       if(addressSource.includes(">")) addressSource = addressSource.split(">").slice(1).join(">");
 
@@ -432,14 +462,27 @@
 
       noteWords.forEach(w => addressSource = addressSource.replaceAll(w,""));
       result.address = normalizeText(addressSource);
+      result.totalAmount = calcTotal(result.amount, result.tip);
 
       return result;
+    }
+
+    function calcTotal(amount, tip){
+      const a = Number(amount || 0);
+      const t = Number(tip || 0);
+      return String(a + t);
+    }
+
+    function updateTotal(){
+      $("totalAmount").value = calcTotal($("amount").value, $("tip").value);
     }
 
     function renderChips(data){
       const chips = [];
       if(data.address) chips.push(`地址：<strong>${escapeHtml(data.address)}</strong>`);
       if(data.amount) chips.push(`金額：<strong>${escapeHtml(data.amount)}元</strong>`);
+      if(data.tip && Number(data.tip) > 0) chips.push(`小費：<strong>${escapeHtml(data.tip)}元</strong>`);
+      if(data.totalAmount && Number(data.totalAmount) > 0) chips.push(`總金額：<strong>${escapeHtml(data.totalAmount)}元</strong>`);
       if(data.km) chips.push(`公里：<strong>${escapeHtml(data.km)}</strong>`);
       if(data.note) chips.push(`備註：<strong>${escapeHtml(data.note)}</strong>`);
       $("chips").innerHTML = chips.length ? chips.map(x => `<span class="chip">${x}</span>`).join("") : `<span class="chip">尚未偵測</span>`;
@@ -450,8 +493,10 @@
       $("date").value = data.date || todayString();
       $("km").value = data.km || "";
       $("amount").value = data.amount || "";
+      $("tip").value = data.tip || "0";
       $("note").value = data.note || "";
-      renderChips(data);
+      updateTotal();
+      renderChips({...data, totalAmount: $("totalAmount").value});
     }
 
     function getApiUrl(){
@@ -520,12 +565,15 @@
     }
 
     function getFormData(){
+      updateTotal();
       return {
         rawText: $("rawText").value.trim(),
         address: $("address").value.trim(),
         date: $("date").value.trim(),
         km: $("km").value.trim(),
         amount: $("amount").value.trim(),
+        tip: $("tip").value.trim() || "0",
+        totalAmount: $("totalAmount").value.trim() || calcTotal($("amount").value, $("tip").value),
         note: $("note").value.trim()
       };
     }
@@ -589,7 +637,7 @@
       box.innerHTML = records.map(r => `
         <div class="record">
           <strong>${escapeHtml(r.address || "")}</strong>
-          ${escapeHtml(r.date || "")}｜${escapeHtml(r.amount || "")}元｜${escapeHtml(r.km || "")}公里${r.note ? "｜" + escapeHtml(r.note) : ""}<br>
+          ${escapeHtml(r.date || "")}｜車資 ${escapeHtml(r.amount || "")}元｜小費 ${escapeHtml(r.tip || "0")}元｜總金額 ${escapeHtml(r.totalAmount || r.amount || "")}元｜${escapeHtml(r.km || "")}公里${r.note ? "｜" + escapeHtml(r.note) : ""}<br>
           <span class="mini">寫入時間：${escapeHtml(r.createdAt || "")}</span>
         </div>
       `).join("");
@@ -613,12 +661,14 @@
     $("parseBtn").addEventListener("click", () => fillFields(parseInfo($("rawText").value)));
     $("clearBtn").addEventListener("click", () => {
       $("rawText").value = "";
-      fillFields({address:"", date:todayString(), km:"", amount:"", note:""});
+      fillFields({address:"", date:todayString(), km:"", amount:"", tip:"0", totalAmount:"0", note:""});
       $("rawText").focus();
     });
     $("submitBtn").addEventListener("click", submitRecord);
     $("loadBtn").addEventListener("click", loadRecords);
     $("refreshBtn").addEventListener("click", loadRecords);
+    $("amount").addEventListener("input", updateTotal);
+    $("tip").addEventListener("input", updateTotal);
     $("rawText").addEventListener("input", () => renderChips(parseInfo($("rawText").value)));
 
     loadApiSettings();
