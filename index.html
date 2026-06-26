@@ -308,8 +308,8 @@
 
     <section class="card">
       <div class="section-title">☘ 自動判斷區 ✦</div>
-      <p class="hint">貼上訊息內容，系統會自動擷取地址、日期、公里、金額與備註，再填入下方欄位。</p>
-      <textarea id="rawText" placeholder="例：斗南車站 1000元 50公里 小費100 半夜"></textarea>
+      <p class="hint">貼上或語音輸入內容，系統會自動擷取地址、日期、公里、金額、小費、時段與特殊狀況。</p>
+      <textarea id="rawText" placeholder="例：高雄車站 300元 20公里 小費30 半夜 下雨 打雷 停班"></textarea>
       <div class="row" style="margin-top:10px">
         <button class="btn dark" id="clearBtn">清空</button>
         <button class="btn" id="parseBtn">✦ 解析填入</button>
@@ -448,6 +448,55 @@
       return s.replace(/\s+/g," ").trim();
     }
 
+    const NOTE_RULES = [
+      // 時段
+      { label:"半夜", patterns:["半夜","深夜","夜深","半夜場"] },
+      { label:"凌晨", patterns:["凌晨","清晨"] },
+      { label:"早上", patterns:["早上","上午","一早"] },
+      { label:"中午", patterns:["中午","午間"] },
+      { label:"下午", patterns:["下午"] },
+      { label:"傍晚", patterns:["傍晚","黃昏"] },
+      { label:"晚上", patterns:["晚上","夜晚","晚間"] },
+      { label:"夜間", patterns:["夜間"] },
+
+      // 天氣
+      { label:"下雨", patterns:["下雨","雨天","下大雨","大雨","暴雨","豪雨","雨很大","雨勢"] },
+      { label:"打雷", patterns:["打雷","雷雨","雷聲","閃電","雷電"] },
+      { label:"颱風", patterns:["颱風","台風","風很大","強風","大風"] },
+      { label:"淹水", patterns:["淹水","積水","水淹","路淹"] },
+
+      // 營運 / 特殊狀況
+      { label:"停班", patterns:["停班","停班停課","停課","放颱風假","颱風假"] },
+      { label:"塞車", patterns:["塞車","車多","車潮","很塞","路塞","交通壅塞"] },
+      { label:"車禍", patterns:["車禍","事故","撞車","擦撞"] },
+      { label:"等候", patterns:["等候","等待","等很久","等客","候車"] },
+      { label:"急件", patterns:["急件","趕時間","很急","急用","急診"] },
+      { label:"假日", patterns:["假日","連假","國定假日","週末","周末"] }
+    ];
+
+    function detectNotes(text){
+      const raw = normalizeText(text);
+      const notes = [];
+
+      NOTE_RULES.forEach(rule => {
+        if(rule.patterns.some(p => raw.includes(p))){
+          notes.push(rule.label);
+        }
+      });
+
+      return [...new Set(notes)];
+    }
+
+    function removeDetectedNoteWords(text){
+      let s = text || "";
+      NOTE_RULES.forEach(rule => {
+        rule.patterns.forEach(p => {
+          s = s.replaceAll(p, "");
+        });
+      });
+      return s;
+    }
+
     function parseInfo(text){
       const raw = normalizeText(text);
       const result = { address:"", date:todayString(), km:"", amount:"", tip:"0", totalAmount:"0", note:"" };
@@ -489,8 +538,8 @@
       const kmMatch = raw.match(/(^|[^\$＄\d.])(\d+(?:\.\d+)?)\s*(公里|公理|km)/i);
       if(kmMatch && !result.km) result.km = kmMatch[2];
 
-      const noteWords = ["半夜","凌晨","早上","上午","中午","下午","傍晚","晚上","夜間","假日","雨天"];
-      result.note = noteWords.filter(w => raw.includes(w)).join("、");
+      const detectedNotes = detectNotes(raw);
+      result.note = detectedNotes.join("、");
 
       let addressSource = rawWithoutTip;
       if(addressSource.includes("》")) addressSource = addressSource.split("》").slice(1).join("》");
@@ -504,7 +553,7 @@
         .replace(/(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}|\d{1,2}[\/\-\.]\d{1,2})/g,"")
         .replace(/[→➡➜]/g," ");
 
-      noteWords.forEach(w => addressSource = addressSource.replaceAll(w,""));
+      addressSource = removeDetectedNoteWords(addressSource);
       result.address = normalizeText(addressSource);
       result.totalAmount = calcTotal(result.amount, result.tip);
 
