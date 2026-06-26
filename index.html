@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>TAXI</title>
+  <title>新增記錄</title>
   <style>
     :root{
       --bg:#0c0d10;
@@ -470,7 +470,8 @@
       if(addressSource.includes(">")) addressSource = addressSource.split(">").slice(1).join(">");
 
       addressSource = addressSource
-        .replace(/(\d+(?:\.\d+)?)\s*(元|塊|NTD?|台幣)/ig,"")
+        .replace(/(?:NTD?|台幣)?\s*[\$＄]\s*\d+(?:\.\d+)?/ig,"")
+        .replace(/\d+(?:\.\d+)?\s*(元|塊|NTD?|台幣)/ig,"")
         .replace(/(\d+(?:\.\d+)?)\s*(公里|公理|km)/ig,"")
         .replace(/(\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}|\d{1,2}[\/\-\.]\d{1,2})/g,"")
         .replace(/[→➡➜]/g," ");
