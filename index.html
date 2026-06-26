@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>新增記錄</title>
+  <title>TAXI</title>
   <style>
     :root{
       --bg:#0c0d10;
@@ -430,7 +430,22 @@
     }
 
     function normalizeText(text){
-      return (text || "").replace(/[，,]/g," ").replace(/\s+/g," ").trim();
+      let s = (text || "")
+        .replace(/[，,]/g," ")
+        .replace(/。/g," ")
+        .replace(/\s+/g," ")
+        .trim();
+
+      // iPhone 語音常把「300元20公里」轉成「$300.20公里」
+      // 這裡將 $300.20公里 修正成 $300 20公里
+      // 例：榮總總醫院$330.20公里，小費20半夜
+      // → 榮總總醫院$330 20公里 小費20半夜
+      s = s.replace(/([\$＄]\s*\d+)\.(\d+(?:\.\d+)?)\s*(公里|公理|km)/ig, "$1 $2$3");
+
+      // 也支援 NT$300.20公里、台幣$300.20公里
+      s = s.replace(/((?:NTD?|台幣)\s*[\$＄]\s*\d+)\.(\d+(?:\.\d+)?)\s*(公里|公理|km)/ig, "$1 $2$3");
+
+      return s.replace(/\s+/g," ").trim();
     }
 
     function parseInfo(text){
@@ -459,8 +474,8 @@
       const amountMatch = rawWithoutTip.match(/(\d+(?:\.\d+)?)\s*(元|塊|NTD?|台幣)/i);
       if(amountMatch) result.amount = amountMatch[1];
 
-      const kmMatch = raw.match(/(\d+(?:\.\d+)?)\s*(公里|公理|km)/i);
-      if(kmMatch) result.km = kmMatch[1];
+      const kmMatch = raw.match(/(^|[^\$＄\d.])(\d+(?:\.\d+)?)\s*(公里|公理|km)/i);
+      if(kmMatch) result.km = kmMatch[2];
 
       const noteWords = ["半夜","凌晨","早上","上午","中午","下午","傍晚","晚上","夜間","假日","雨天"];
       result.note = noteWords.filter(w => raw.includes(w)).join("、");
